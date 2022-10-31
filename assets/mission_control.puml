@@ -1,0 +1,35 @@
+@startuml
+!include <C4/C4_Container>
+
+!include <aws/common>
+!include <aws/Database/AmazonRDS/AmazonRDS>
+!include <cloudinsight/kafka>
+!include <tupadr3/devicons/go>
+!include <tupadr3/font-awesome/server>
+!include <tupadr3/devicons/postgresql>
+!include <tupadr3/govicons/file_contract_o>
+!include <tupadr3/font-awesome/envelope>
+!include <material/bike>
+
+AddElementTag("ddd_container", $bgColor=#5f9ea0, $fontColor="white", $legendText="DDD Container")
+
+Person(rider, "Rider", "Customer using or owning an bike", $sprite="ma_bike")
+
+Boundary(ddd, "DDD Mission Control") {
+    ContainerDb(db, "Mission Control Database", "Postgres AWS RDS", "", "postgresql", $tags="ddd_container")
+    ContainerQueue(topic_incoming, "ddd-mission-control-incoming", "Kafka AWS MSK", "", "kafka", $tags="ddd_container")
+    ContainerQueue(topic_outgoing, "ddd-mission-control-outgoing", "Kafka AWS MSK", "", "kafka", $tags="ddd_container")
+    Container(mission_control, "DDD Mission Control", "Golang", "Provides the business logic for user communication", "go", $tags="ddd_container")
+}
+
+System_Ext(mailserver, "Mailserver", "Mail client", $sprite="envelope")
+System_Ext(bike, "Race MKB", "T&C and privacy policy documents", $sprite="file_contract_o")
+
+Rel_R(mission_control, topic_outgoing, "Writes to", "Kafka")
+Rel(mission_control, db, "Reads from / Writes to")
+Rel_L(mission_control, topic_incoming, "Reads from", "Kafka")
+Rel(mission_control, mailserver, "Uses", "HTTPS")
+Rel(mission_control, bike, "Uses", "HTTPS")
+Rel(mailserver, rider, "Delivers mail")
+SHOW_LEGEND()
+@enduml

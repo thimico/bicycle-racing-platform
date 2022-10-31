@@ -1,0 +1,55 @@
+@startuml
+!include <C4/C4_Container>
+
+!include <aws/common>
+!include <aws/Database/AmazonRDS/AmazonRDS>
+!include <cloudinsight/kafka>
+!include <tupadr3/devicons/go>
+!include <tupadr3/font-awesome/server>
+!include <tupadr3/devicons/postgresql>
+!include <tupadr3/govicons/mobile>
+!include <tupadr3/govicons/file_contract_o>
+!include <tupadr3/font-awesome/envelope>
+!include <material/bike>
+!include <logos/kotlin>
+
+AddElementTag("digital_business_system", $bgColor="#d4d4d4", $fontColor="black", $legendText="Digital Business System")
+AddElementTag("container", $bgColor="#a9a9a9", $borderColor="#444444", $fontColor="white", $legendText="DBS Container")
+AddElementTag("ddd_container", $bgColor=#5f9ea0, $fontColor="white", $legendText="DDD Container")
+
+Person(rider, "Rider", "Customer using or owning an bike", $sprite="ma_bike")
+
+Boundary(ddd, "DDD Mission Control") {
+    ContainerDb(db, "Mission Control Database", "Postgres AWS RDS", "", "postgresql", $tags="ddd_container")
+    ContainerQueue(topic_incoming, "ddd-mission-control-incoming", "Kafka AWS MSK", "", "kafka", $tags="ddd_container")
+    ContainerQueue(topic_outgoing, "ddd-mission-control-outgoing", "Kafka AWS MSK", "", "kafka", $tags="ddd_container")
+    Container(mission_control, "DDD Mission Control", "Golang", "Provides the business logic for user communication", "go", $tags="ddd_container")
+}
+
+Boundary(dbs, "Digital Business System", $tags="digital_business_system") {
+    Container(app, "Mobile App", "iOS/Android native", "Registration", $sprite="mobile")
+
+    Boundary(devops, "Devops") {
+        Container(router, "Router", "Golang", "", "go")
+    }
+
+    Boundary(obc, "OBC") {
+        Container(platform_service, "Platform Service", "Kotlin", "Manages races, riders, bikes, and bike components", "kotlin")
+    }
+}
+
+
+System_Ext(mailserver, "Mailserver", "Mail client", $sprite="envelope")
+
+Rel(rider, app, "Uses")
+Rel(app, platform_service, "Uses", "HTTPS")
+BiRel_R(platform_service, router, "Reads from / Writes to", "Kafka")
+Rel_R(router, topic_incoming, "Writes to", "Kafka")
+Rel_L(router, topic_outgoing, "Reads from", "Kafka")
+Rel(mission_control, db, "Reads from / Writes to")
+Rel_D(mission_control, topic_incoming, "Reads from", "Kafka")
+Rel_U(mission_control, topic_outgoing, "Writes to", "Kafka")
+Rel_R(mission_control, mailserver, "Uses", "HTTPS")
+
+SHOW_LEGEND()
+@enduml
